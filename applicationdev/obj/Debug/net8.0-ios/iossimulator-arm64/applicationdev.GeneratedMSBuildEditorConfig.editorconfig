@@ -13,128 +13,130 @@ build_property.EnforceExtendedAnalyzerRules =
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = applicationdev
 build_property.RootNamespace = applicationdev
-build_property.ProjectDir = /Users/himeshshakya/RiderProjects/applicationdev/applicationdev/
+build_property.ProjectDir = /Users/khushidhital/Downloads/kad/applicationdev/
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 8.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = /Users/himeshshakya/RiderProjects/applicationdev/applicationdev
+build_property.MSBuildProjectDirectory = /Users/khushidhital/Downloads/kad/applicationdev
 build_property._RazorSourceGeneratorDebug = 
+build_property.EffectiveAnalysisLevelStyle = 8.0
+build_property.EnableCodeStyleSeverity = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/App.xaml]
+[/Users/khushidhital/Downloads/kad/applicationdev/App.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = applicationdev.App.xaml
 build_metadata.AdditionalFiles.TargetPath = App.xaml
 build_metadata.AdditionalFiles.RelativePath = App.xaml
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/MainPage.xaml]
+[/Users/khushidhital/Downloads/kad/applicationdev/MainPage.xaml]
 build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = applicationdev.MainPage.xaml
 build_metadata.AdditionalFiles.TargetPath = MainPage.xaml
 build_metadata.AdditionalFiles.RelativePath = MainPage.xaml
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Layout/UserLayout.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Layout/UserLayout.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvVXNlckxheW91dC5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/AddJournal.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/AddJournal.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9BZGRKb3VybmFsLnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/Addmood.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/Addmood.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9BZGRtb29kLnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/Addtag.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/Addtag.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9BZGR0YWcucmF6b3I=
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/Counter.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/Counter.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Db3VudGVyLnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/Home.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/Home.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Ib21lLnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/Loginpage.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/Loginpage.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9Mb2dpbnBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/RegisterPage.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/RegisterPage.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9SZWdpc3RlclBhZ2UucmF6b3I=
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/Setting.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/Setting.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9TZXR0aW5nLnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/ViewJournals.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/ViewJournals.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9WaWV3Sm91cm5hbHMucmF6b3I=
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Pages/Weather.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Pages/Weather.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9QYWdlcy9XZWF0aGVyLnJhem9y
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Routes.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Routes.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9Sb3V0ZXMucmF6b3I=
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/_Imports.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/_Imports.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9fSW1wb3J0cy5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = 
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Layout/MainLayout.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Layout/MainLayout.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTWFpbkxheW91dC5yYXpvcg==
 build_metadata.AdditionalFiles.RelativePath = 
 build_metadata.AdditionalFiles.CssScope = b-y9jbin15tf
 
-[/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/Components/Layout/NavMenu.razor]
+[/Users/khushidhital/Downloads/kad/applicationdev/Components/Layout/NavMenu.razor]
 build_metadata.AdditionalFiles.GenKind = 
 build_metadata.AdditionalFiles.ManifestResourceName = 
 build_metadata.AdditionalFiles.TargetPath = Q29tcG9uZW50cy9MYXlvdXQvTmF2TWVudS5yYXpvcg==
