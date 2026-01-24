@@ -1,0 +1,113 @@
+@page "/addmood"
+
+
+@using applicationdev.ModelDirectory
+@using applicationdev.ServicesDirectory
+@inject IMoodService MoodService
+
+<h3>Manage Moods</h3>
+
+<hr />
+
+<!-- Add / Update Form -->
+<EditForm Model="moodModel" OnValidSubmit="HandleSave">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Mood Title</label>
+        <InputText class="form-control" @bind-Value="moodModel.MoodTitle" />
+        <ValidationMessage For="@(() => moodModel.MoodTitle)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Category</label>
+        <InputSelect class="form-control" @bind-Value="moodModel.Category">
+            @foreach (var c in Enum.GetValues(typeof(Mood.MoodCategory)))
+            {
+                <option value="@c">@c</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => moodModel.Category)" />
+    </div>
+
+    <button class="btn btn-success me-2" type="submit">@((moodModel.MoodKey == 0) ? "Add Mood" : "Update Mood")</button>
+    <button type="button" class="btn btn-secondary" @onclick="ClearForm">Clear</button>
+</EditForm>
+
+<hr />
+
+<h4>All Moods</h4>
+@if (moods == null || !moods.Any())
+{
+    <p>No moods found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Category</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var m in moods)
+            {
+                <tr>
+                    <td>@m.MoodKey</td>
+                    <td>@m.MoodTitle</td>
+                    <td>@m.Category</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-2" @onclick="() => EditMood(m)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteMood(m.MoodKey)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Mood moodModel = new Mood();
+    private List<Mood> moods = new List<Mood>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        moods = (await MoodService.GetAllMoodsAsync()).ToList();
+    }
+
+    private async Task HandleSave()
+    {
+        if (moodModel.MoodKey == 0)
+            await MoodService.AddMoodAsync(moodModel);
+        else
+            await MoodService.UpdateMoodAsync(moodModel);
+
+        moods = (await MoodService.GetAllMoodsAsync()).ToList();
+        ClearForm();
+    }
+
+    private void EditMood(Mood m)
+    {
+        moodModel = new Mood
+        {
+            MoodKey = m.MoodKey,
+            MoodTitle = m.MoodTitle,
+            Category = m.Category
+        };
+    }
+
+    private async Task DeleteMood(int id)
+    {
+        await MoodService.DeleteMoodAsync(id);
+        moods = (await MoodService.GetAllMoodsAsync()).ToList();
+    }
+
+    private void ClearForm()
+    {
+        moodModel = new Mood();
+    }
+}

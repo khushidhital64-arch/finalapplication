@@ -1,0 +1,188 @@
+@page "/addjournal"
+@inject IStoreUserService StoreUser
+@using applicationdev.ModelDirectory
+@using applicationdev.ServicesDirectory
+@inject IJournalService JournalService
+@inject IMoodService MoodService
+@inject ITagService TagService
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+
+<h3>Add Journal Entry</h3>
+<hr />
+
+<EditForm Model="journalModel" OnValidSubmit="HandleSave">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <!-- Date -->
+    <div class="mb-3">
+        <label>Date</label>
+        <InputDate class="form-control" @bind-Value="journalModel.JournalDate" />
+        <ValidationMessage For="@(() => journalModel.JournalDate)" />
+    </div>
+
+    
+    <!-- Content -->
+    <div class="mb-3">
+        <label>Content</label>
+    
+        <div id="editor" style="height: 200px; border: 1px solid #ccc;"></div>
+    </div>
+
+    <!-- Primary Mood (required) -->
+    <div class="mb-3">
+        <label>Main Mood</label>
+        <InputSelect class="form-control" @bind-Value="journalModel.MainMoodId">
+            <option value="">-- Select Mood --</option>
+            @foreach (var m in moods)
+            {
+                <option value="@m.MoodKey">@m.MoodTitle (@m.Category)</option>
+            }
+        </InputSelect>
+        <ValidationMessage For="@(() => journalModel.MainMoodId)" />
+    </div>
+
+    <!-- Secondary Moods (optional) -->
+    <div class="mb-3">
+        <label>Secondary Moods (optional)</label>
+        <select multiple class="form-select" @onchange="SecondaryMoodsChanged">
+            @foreach (var m in moods)
+            {
+                <option value="@m.MoodKey" selected="@selectedSecondaryMoodIds.Contains(m.MoodKey)">
+                    @m.MoodTitle (@m.Category)
+                </option>
+            }
+        </select>
+    </div>
+
+    <!-- Tags (optional) -->
+    <div class="mb-3">
+        <label>Tags (optional)</label>
+        <select multiple class="form-select" @onchange="TagsChanged">
+            @foreach (var t in tags)
+            {
+                <option value="@t.TagKey" selected="@selectedTagIds.Contains(t.TagKey)">
+                    @t.TagTitle
+                </option>
+            }
+        </select>
+    </div>
+
+    <button class="btn btn-primary" type="submit">Save Journal</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-danger mt-2">@message</div>
+}
+
+
+
+
+@code {
+    private JournalEntry journalModel = new JournalEntry
+    {
+        JournalDate = DateTime.Today
+    };
+
+    private List<Mood> moods = new();
+    private List<Tag> tags = new();
+
+    private List<int> selectedSecondaryMoodIds = new();
+    private List<int> selectedTagIds = new();
+
+    private string message = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+        moods = await MoodService.GetAllMoodsAsync();
+        tags = await TagService.GetAllTagsAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Initialize Quill editor
+            await JS.InvokeVoidAsync("initQuill", "editor");
+        }
+    }
+
+    private void SecondaryMoodsChanged(ChangeEventArgs e)
+    {
+        selectedSecondaryMoodIds = e.Value is string single
+            ? new List<int> { int.Parse(single) }
+            : (e.Value as IEnumerable<string>)?.Select(int.Parse).ToList() ?? new List<int>();
+    }
+
+    private void TagsChanged(ChangeEventArgs e)
+    {
+        selectedTagIds = e.Value is string single
+            ? new List<int> { int.Parse(single) }
+            : (e.Value as IEnumerable<string>)?.Select(int.Parse).ToList() ?? new List<int>();
+    }
+
+    private async Task HandleSave()
+    {
+        message = string.Empty;
+
+        
+        if (journalModel.MainMoodId == 0)
+        {
+            message = "Please select a primary mood!";
+            return;
+        }
+        journalModel.BodyText = await JS.InvokeAsync<string>("getQuillHtml");
+        
+        if (string.IsNullOrWhiteSpace(journalModel.BodyText))
+        {
+            message = "Please write something in your journal!";
+            return;
+        }
+
+        var userId = StoreUser.UserId; // get logged-in user id
+        var existing = (await JournalService.GetAllJournalsAsync())
+            .FirstOrDefault(j => 
+                j.JournalDate.Date == journalModel.JournalDate.Date &&
+                j.OwnerId == userId);
+        if (existing != null)
+        {
+            message = "A journal entry for this date already exists! You can only add one mood per day.";
+            return;
+        }
+   
+     
+        journalModel.OwnerId = StoreUser.UserId;
+
+        // Word count
+        journalModel.TotalWordCount = journalModel.BodyText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+
+        // Secondary moods
+        journalModel.ExtraMoods.Clear();
+        foreach (var moodId in selectedSecondaryMoodIds)
+        {
+            journalModel.ExtraMoods.Add(new JournalEntrySecondaryMood
+            {
+                RelatedMoodId = moodId,
+                EntryRef = journalModel
+            });
+        }
+
+        // Tags
+        journalModel.EntryTags.Clear();
+        foreach (var tagId in selectedTagIds)
+        {
+            journalModel.EntryTags.Add(new JournalEntryTag
+            {
+                RelatedTagId = tagId,
+                EntryRef = journalModel
+            });
+        }
+
+        await JournalService.AddJournalAsync(journalModel);
+
+        message = "Journal entry saved successfully!";
+        Nav.NavigateTo("/journals");
+    }
+}

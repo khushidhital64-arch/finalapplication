@@ -1,0 +1,45 @@
+{
+  "Files": [
+    {
+      "Id": "/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/obj/Debug/net8.0-ios/iossimulator-arm64/scopedcss/bundle/applicationdev.styles.css",
+      "PackagePath": "staticwebassets/applicationdev.styles.css"
+    },
+    {
+      "Id": "/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/wwwroot/css/app.css",
+      "PackagePath": "staticwebassets/css/app.css"
+    },
+    {
+      "Id": "/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/wwwroot/css/bootstrap/bootstrap.min.css",
+      "PackagePath": "staticwebassets/css/bootstrap/bootstrap.min.css"
+    },
+    {
+      "Id": "/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/wwwroot/css/bootstrap/bootstrap.min.css.map",
+      "PackagePath": "staticwebassets/css/bootstrap/bootstrap.min.css.map"
+    },
+    {
+      "Id": "/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/wwwroot/favicon.png",
+      "PackagePath": "staticwebassets/favicon.png"
+    },
+    {
+      "Id": "/Users/himeshshakya/RiderProjects/applicationdev/applicationdev/wwwroot/index.html",
+      "PackagePath": "staticwebassets/index.html"
+    },
+    {
+      "Id": "obj/Debug/net8.0-ios/iossimulator-arm64/staticwebassets/msbuild.applicationdev.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0-ios/iossimulator-arm64/staticwebassets/msbuild.build.applicationdev.props",
+      "PackagePath": "build\\applicationdev.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0-ios/iossimulator-arm64/staticwebassets/msbuild.buildMultiTargeting.applicationdev.props",
+      "PackagePath": "buildMultiTargeting\\applicationdev.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0-ios/iossimulator-arm64/staticwebassets/msbuild.buildTransitive.applicationdev.props",
+      "PackagePath": "buildTransitive\\applicationdev.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

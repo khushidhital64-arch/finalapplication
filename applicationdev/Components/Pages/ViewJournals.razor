@@ -1,0 +1,223 @@
+@page "/journals"
+
+@using applicationdev.ModelDirectory
+@using applicationdev.ServicesDirectory
+@inject IJournalService JournalService
+@inject IStoreUserService StoreUser
+
+<h3>My Journals</h3>
+
+<!-- Filters -->
+<div class="row mb-3">
+    <div class="col-md-3">
+        <input class="form-control" placeholder="Search by content..." @bind="searchContent" @bind:event="oninput" />
+    </div>
+    <div class="col-md-2">
+        <input type="date" class="form-control" @bind="fromDate" />
+    </div>
+    <div class="col-md-2">
+        <input type="date" class="form-control" @bind="toDate" />
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" @bind="selectedMoodId">
+            <option value="">-- Filter by Mood --</option>
+            @foreach (var m in moods)
+            {
+                <option value="@m.MoodKey">@m.MoodTitle (@m.Category)</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <select class="form-select" @bind="selectedTagId">
+            <option value="">-- Filter by Tag --</option>
+            @foreach (var t in tags)
+            {
+                <option value="@t.TagKey">@t.TagTitle</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-1">
+        <button class="btn btn-secondary w-100" @onclick="ApplyFilters">Apply</button>
+    </div>
+</div>
+
+<!-- Journal List -->
+@if (pagedJournals == null)
+{
+    <p>Loading...</p>
+}
+else if (!pagedJournals.Any())
+{
+    <p>No journals found!</p>
+}
+else
+{
+    <div class="list-group mb-3">
+        @foreach (var j in pagedJournals)
+        {
+            <button class="list-group-item list-group-item-action text-start"
+                    @onclick="() => ToggleJournal(j.JournalId)">
+                <strong>@j.JournalDate.ToString("yyyy-MM-dd")</strong> |
+                Primary Mood: @j.MainMood?.MoodTitle
+                @if (expandedJournalId == j.JournalId)
+                {
+                    <div class="mt-2 border-top pt-2">
+                        <p><strong>Word Count:</strong> @j.TotalWordCount</p>
+                        <p><strong>Content:</strong></p>
+                        <div>@((MarkupString)j.BodyText)</div>
+
+                        @if (j.ExtraMoods.Any())
+                        {
+                            <p><strong>Secondary Moods:</strong> 
+                                @string.Join(", ", j.ExtraMoods.Select(em => em.RelatedMood.MoodTitle))
+                            </p>
+                        }
+                        @if (j.EntryTags.Any())
+                        {
+                            <p><strong>Tags:</strong> 
+                                @string.Join(", ", j.EntryTags.Select(t => t.RelatedTag.TagTitle))
+                            </p>
+                        }
+                    </div>
+                }
+            </button>
+        }
+    </div>
+
+    <!-- Pagination -->
+    <nav>
+        <ul class="pagination">
+            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                <button class="page-link" @onclick="PrevPage">Previous</button>
+            </li>
+           
+            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                <button class="page-link" @onclick="NextPage">Next</button>
+            </li>
+        </ul>
+    </nav>
+}
+
+@code {
+    private List<JournalEntry> journals;
+    private List<JournalEntry> filteredJournals;
+    private List<JournalEntry> pagedJournals;
+
+    private List<Mood> moods = new();
+    private List<Tag> tags = new();
+
+    private int? expandedJournalId = null;
+
+    // Pagination
+    private int currentPage = 1;
+    private int pageSize = 5;
+    private int totalPages => (int)Math.Ceiling((double)(filteredJournals?.Count ?? 0) / pageSize);
+
+    // Filters
+    private string searchContent = string.Empty;
+    private int? selectedMoodId = null;
+    private int? selectedTagId = null;
+    private DateTime? fromDate = null;
+    private DateTime? toDate = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = StoreUser.UserId;
+
+        // Load journals for current user
+        journals = (await JournalService.GetAllJournalsAsync())
+                   .Where(j => j.OwnerId == userId)
+                   .OrderByDescending(j => j.JournalDate)
+                   .ToList();
+
+        // Load moods and tags for filters
+        moods = journals.Select(j => j.MainMood)
+                       .Where(m => m != null)
+                       .Distinct()
+                       .ToList();
+
+        tags = journals.SelectMany(j => j.EntryTags.Select(t => t.RelatedTag))
+                       .Where(t => t != null)
+                       .Distinct()
+                       .ToList();
+
+        // Initially show all journals
+        filteredJournals = new List<JournalEntry>(journals);
+        ApplyPagination();
+    }
+
+    private void ToggleJournal(int journalId)
+    {
+        expandedJournalId = expandedJournalId == journalId ? null : journalId;
+    }
+
+    private void ApplyFilters()
+    {
+        // Start with all journals
+        filteredJournals = journals;
+
+        // 1️⃣ Filter by content
+        if (!string.IsNullOrWhiteSpace(searchContent))
+            filteredJournals = filteredJournals
+                .Where(j => j.BodyText.Contains(searchContent))
+                .ToList();
+
+        // 2️⃣ Filter by date range
+        if (fromDate.HasValue)
+            filteredJournals = filteredJournals
+                .Where(j => j.JournalDate.Date >= fromDate.Value.Date)
+                .ToList();
+
+        if (toDate.HasValue)
+            filteredJournals = filteredJournals
+                .Where(j => j.JournalDate.Date <= toDate.Value.Date)
+                .ToList();
+
+        // 3️⃣ Filter by primary mood
+        if (selectedMoodId.HasValue)
+            filteredJournals = filteredJournals
+                .Where(j => j.MainMoodId == selectedMoodId)
+                .ToList();
+
+        // 4️⃣ Filter by tag
+        if (selectedTagId.HasValue)
+            filteredJournals = filteredJournals
+                .Where(j => j.EntryTags.Any(t => t.RelatedTagId == selectedTagId))
+                .ToList();
+
+        // Sort by date descending
+        filteredJournals = filteredJournals
+            .OrderByDescending(j => j.JournalDate)
+            .ToList();
+
+        // Reset page
+        currentPage = 1;
+        ApplyPagination();
+    }
+
+    private void ApplyPagination()
+    {
+        pagedJournals = filteredJournals
+            .Skip((currentPage - 1) * pageSize)
+            .Take(pageSize)
+            .ToList();
+    }
+
+    private void PrevPage()
+    {
+        if (currentPage > 1)
+        {
+            currentPage--;
+            ApplyPagination();
+        }
+    }
+
+    private void NextPage()
+    {
+        if (currentPage < totalPages)
+        {
+            currentPage++;
+            ApplyPagination();
+        }
+    }
+}

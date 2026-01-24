@@ -1,0 +1,65 @@
+@page "/setting"
+@using applicationdev.ServicesDirectory
+@inject ThemeService ThemeService
+@inject IStoreUserService StoreUser
+@inject IUserService UserService
+@inject NavigationManager NavManager
+
+<h1>Settings</h1>
+
+<!-- Theme Section -->
+<p>Current Theme: <strong>@ThemeService.CurrentTheme</strong></p>
+
+<hr />
+
+<!-- Change Password Section -->
+<h2>Change Password</h2>
+
+<div class="mb-3">
+    <label for="newPassword" class="form-label">New Password</label>
+    <input type="password" id="newPassword" class="form-control" @bind="newPassword" />
+</div>
+
+@if (!string.IsNullOrEmpty(passwordMessage))
+{
+    <div class="alert @passwordMessageClass">@passwordMessage</div>
+}
+
+<button class="btn btn-success me-2" @onclick="ChangePasswordAsync">Change Password</button>
+<button class="btn btn-danger bg-danger" @onclick="Logout">Logout</button>
+
+@code {
+    private string newPassword;
+    private string passwordMessage;
+    private string passwordMessageClass;
+
+    private async Task ChangePasswordAsync()
+    {
+        if (string.IsNullOrWhiteSpace(newPassword))
+        {
+            passwordMessage = "Please enter a new password.";
+            passwordMessageClass = "alert-danger";
+            return;
+        }
+
+        bool result = await UserService.UpdatePasswordAsync(StoreUser.UserId, newPassword);
+
+        if (result)
+        {
+            passwordMessage = "Password changed successfully!";
+            passwordMessageClass = "alert-success";
+            newPassword = string.Empty;
+        }
+        else
+        {
+            passwordMessage = "Failed to change password. Please try again.";
+            passwordMessageClass = "alert-danger";
+        }
+    }
+
+    private void Logout()
+    {
+        StoreUser.ClearUser(); // clear stored user info
+        NavManager.NavigateTo("/"); // navigate to home page
+    }
+}

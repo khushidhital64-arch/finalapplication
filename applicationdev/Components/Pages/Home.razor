@@ -1,0 +1,286 @@
+﻿@page "/home"
+@using applicationdev.ModelDirectory
+@using applicationdev.ServicesDirectory
+@inject IStoreUserService StoreUser
+@inject IJournalService JournalService
+@inject IJSRuntime JS
+
+<h1 class="text-center">Hello, @StoreUser.Username!</h1>
+
+<p class="text-center text-muted">
+    Don't wait for inspiration. Be the inspiration. Start writing your thoughts today!
+</p>
+
+@if (!StoreUser.IsLoggedIn)
+{
+    <p class="text-center text-danger">Please log in to access all features.</p>
+}
+else if (journals != null)
+{
+    <!-- 🔥 STREAK + STATS -->
+    <div class="container mb-5">
+        <div class="row g-3 text-center">
+
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">Current Streak</h6>
+                        <h2 class="fw-bold">@currentStreak</h2>
+                        <span class="text-muted">day(s)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">Longest Streak</h6>
+                        <h2 class="fw-bold">@longestStreak</h2>
+                        <span class="text-muted">day(s)</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">Missed Days</h6>
+                        <h2 class="fw-bold">@missedDays</h2>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3">
+                <div class="card h-100 shadow-sm">
+                    <div class="card-body">
+                        <h6 class="text-muted">Avg Words / Entry</h6>
+                        <h2 class="fw-bold">@averageWordCount</h2>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- 📝 LAST 3 ENTRIES -->
+    <div class="container mb-5">
+        <h4 class="mb-3">Recent Journal Entries</h4>
+
+        @if (!lastThreeEntries.Any())
+        {
+            <p class="text-muted">No journal entries yet. Start writing today ✍️</p>
+        }
+        else
+        {
+            <div class="list-group">
+                @foreach (var j in lastThreeEntries)
+                {
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex justify-content-between">
+                            <strong>@j.JournalDate.ToString("yyyy-MM-dd")</strong>
+                            <span class="text-muted">@j.TotalWordCount words</span>
+                        </div>
+
+                        <div class="mt-2 text-muted small">
+                            @((MarkupString)(j.BodyText))
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="container mb-5">
+        <h4 class="mb-3">Mood Counts</h4>
+        <ul>
+            <li>Positive: @positiveCount</li>
+            <li>Neutral: @neutralCount</li>
+            <li>Negative: @negativeCount</li>
+        </ul>
+        <div class="row justify-content-center">
+            <div class="col-6 ">
+                <canvas id="moodPieChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mb-5">
+        <h4 class="mb-3">Tag Counts</h4>
+        @if (tagCounts.Any())
+        {
+            <ul>
+                @foreach (var tag in tagCounts)
+                {
+                    <li>@tag.TagTitle: @tag.Count</li>
+                }
+            </ul>
+            <div class="row justify-content-center">
+                <div class="col-8">
+                    <canvas id="tagBarChart"></canvas>
+                </div>
+            </div>
+        }
+        else
+        {
+            <p class="text-muted">No tags used yet.</p>
+        }
+    </div>
+
+
+}
+
+@code {
+    private List<JournalEntry> journals = new();
+    private List<JournalEntry> lastThreeEntries = new();
+
+    private int currentStreak = 0;
+    private int longestStreak = 0;
+    private int missedDays = 0;
+    private double averageWordCount = 0;
+
+    private int positiveCount = 0;
+    private int neutralCount = 0;
+    private int negativeCount = 0;
+
+    private List<(string TagTitle, int Count)> tagCounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var userId = StoreUser.UserId;
+
+        journals = (await JournalService.GetAllJournalsAsync())
+            .Where(j => j.OwnerId == userId)
+            .OrderByDescending(j => j.JournalDate)
+            .ToList();
+
+        CalculateStreaks();
+        CalculateAverageWordCount();
+        LoadLastThreeEntries();
+        CountMoods();
+        CountTags();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await RenderChartsAsync();
+        }
+    }
+
+    private void CalculateAverageWordCount()
+    {
+        if (journals.Any())
+            averageWordCount = Math.Round(journals.Average(j => j.TotalWordCount), 1);
+    }
+
+    private void LoadLastThreeEntries()
+    {
+        lastThreeEntries = journals
+            .OrderByDescending(j => j.JournalDate)
+            .Take(3)
+            .ToList();
+    }
+
+    private void CalculateStreaks()
+    {
+        if (!journals.Any()) return;
+
+        var dates = journals
+            .Select(j => j.JournalDate.Date)
+            .Distinct()
+            .OrderBy(d => d)
+            .ToList();
+
+        int tempStreak = 1;
+        longestStreak = 1;
+        missedDays = 0;
+
+        for (int i = 1; i < dates.Count; i++)
+        {
+            int diff = (dates[i] - dates[i - 1]).Days;
+            if (diff == 1) tempStreak++;
+            else if (diff > 1)
+            {
+                missedDays += diff - 1;
+                tempStreak = 1;
+            }
+            if (tempStreak > longestStreak) longestStreak = tempStreak;
+        }
+
+        var lastDate = dates.Last();
+        int gap = (DateTime.Now.Date - lastDate).Days;
+        currentStreak = (gap == 0 || gap == 1) ? tempStreak : 0;
+    }
+
+    private void CountMoods()
+    {
+        positiveCount = 0;
+        neutralCount = 0;
+        negativeCount = 0;
+
+        foreach (var j in journals)
+        {
+            // Primary mood
+            if (j.MainMood != null)
+            {
+                switch (j.MainMood.Category)
+                {
+                    case Mood.MoodCategory.Positive: positiveCount++; break;
+                    case Mood.MoodCategory.Neutral: neutralCount++; break;
+                    case Mood.MoodCategory.Negative: negativeCount++; break;
+                }
+            }
+
+            // Secondary moods
+            if (j.ExtraMoods != null)
+            {
+                foreach (var sm in j.ExtraMoods)
+                {
+                    if (sm.RelatedMood != null)
+                    {
+                        switch (sm.RelatedMood.Category)
+                        {
+                            case Mood.MoodCategory.Positive: positiveCount++; break;
+                            case Mood.MoodCategory.Neutral: neutralCount++; break;
+                            case Mood.MoodCategory.Negative: negativeCount++; break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private void CountTags()
+    {
+        tagCounts = journals
+            .SelectMany(j => j.EntryTags)
+            .Where(t => t.RelatedTag != null)
+            .GroupBy(t => t.RelatedTag.TagTitle)
+            .Select(g => (TagTitle: g.Key, Count: g.Count()))
+            .ToList();
+    }
+
+    private async Task RenderChartsAsync()
+    {
+        // Pie chart for moods
+        await JS.InvokeVoidAsync("renderPieChart",
+            "moodPieChart",
+            new[] { "Positive", "Neutral", "Negative" },
+            new[] { positiveCount, neutralCount, negativeCount }
+        );
+
+        // Bar chart for tags
+        if (tagCounts.Any())
+        {
+            var labels = tagCounts.Select(t => t.TagTitle).ToArray();
+            var data = tagCounts.Select(t => t.Count).ToArray();
+
+            await JS.InvokeVoidAsync("renderBarChart",
+                "tagBarChart",
+                labels,
+                data
+            );
+        }
+    }
+}

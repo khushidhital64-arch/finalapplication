@@ -1,0 +1,29 @@
+﻿@inherits LayoutComponentBase
+@inject applicationdev.ServicesDirectory.ThemeService ThemeService
+
+<div class="page @ThemeService.CurrentTheme">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <button class="btn btn-sm btn-secondary"
+                    @onclick="ToggleTheme">
+                Toggle Theme
+            </button>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code {
+    void ToggleTheme()
+    {
+        ThemeService.ToggleTheme();
+        StateHasChanged();
+    }
+}

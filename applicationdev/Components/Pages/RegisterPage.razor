@@ -1,0 +1,59 @@
+@page "/register"
+@layout Layout.UserLayout
+@using applicationdev.ModelDirectory
+@using applicationdev.ServicesDirectory
+@inject IUserService UserService
+@inject NavigationManager Nav
+
+<h3>Register</h3>
+
+<EditForm Model="registerModel" OnValidSubmit="HandleRegister">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Username</label>
+        <InputText class="form-control" @bind-Value="registerModel.LoginId" />
+        <ValidationMessage For="@(() => registerModel.LoginId)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText type="email" class="form-control" @bind-Value="registerModel.MailAddress" />
+        <ValidationMessage For="@(() => registerModel.MailAddress)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText type="password" class="form-control" @bind-Value="registerModel.SecretHash" />
+        <ValidationMessage For="@(() => registerModel.SecretHash)" />
+    </div>
+
+    <button class="btn btn-primary" type="submit">Register</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-info mt-2">@message</div>
+}
+
+@code {
+    private User registerModel = new User();
+    private string message = string.Empty;
+
+    private async Task HandleRegister()
+    {
+        // Check if email already exists
+        bool exists = await UserService.IsEmailTakenAsync(registerModel.MailAddress);
+        if (exists)
+        {
+            message = "Email is already registered!";
+            return;
+        }
+
+        await UserService.RegisterUserAsync(registerModel);
+        message = "Registration successful!";
+        // Optionally navigate to login page
+        Nav.NavigateTo("/home");
+    }
+}

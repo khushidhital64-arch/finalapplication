@@ -1,0 +1,99 @@
+@page "/addtag"
+
+
+@using applicationdev.ModelDirectory
+@using applicationdev.ServicesDirectory
+@inject ITagService TagService
+
+<h3>Manage Tags</h3>
+
+<hr />
+
+<!-- Add / Update Form -->
+<EditForm Model="tagModel" OnValidSubmit="HandleSave">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+
+    <div class="mb-3">
+        <label>Tag Title</label>
+        <InputText class="form-control" @bind-Value="tagModel.TagTitle" />
+        <ValidationMessage For="@(() => tagModel.TagTitle)" />
+    </div>
+
+    <button class="btn btn-success me-2" type="submit">@((tagModel.TagKey == 0) ? "Add Tag" : "Update Tag")</button>
+    <button type="button" class="btn btn-secondary" @onclick="ClearForm">Clear</button>
+</EditForm>
+
+<hr />
+
+<h4>All Tags</h4>
+@if (tags == null || !tags.Any())
+{
+    <p>No tags found.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var t in tags)
+            {
+                <tr>
+                    <td>@t.TagKey</td>
+                    <td>@t.TagTitle</td>
+                    <td>
+                        <button class="btn btn-sm btn-warning me-2" @onclick="() => EditTag(t)">Edit</button>
+                        <button class="btn btn-sm btn-danger" @onclick="() => DeleteTag(t.TagKey)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private Tag tagModel = new Tag();
+    private List<Tag> tags = new List<Tag>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        tags = (await TagService.GetAllTagsAsync()).ToList();
+    }
+
+    private async Task HandleSave()
+    {
+        if (tagModel.TagKey == 0)
+            await TagService.AddTagAsync(tagModel);
+        else
+            await TagService.UpdateTagAsync(tagModel);
+
+        tags = (await TagService.GetAllTagsAsync()).ToList();
+        ClearForm();
+    }
+
+    private void EditTag(Tag t)
+    {
+        tagModel = new Tag
+        {
+            TagKey = t.TagKey,
+            TagTitle = t.TagTitle
+        };
+    }
+
+    private async Task DeleteTag(int id)
+    {
+        await TagService.DeleteTagAsync(id);
+        tags = (await TagService.GetAllTagsAsync()).ToList();
+    }
+
+    private void ClearForm()
+    {
+        tagModel = new Tag();
+    }
+}

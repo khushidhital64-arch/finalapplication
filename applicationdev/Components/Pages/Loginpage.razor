@@ -1,0 +1,58 @@
+@page "/"
+@layout Layout.UserLayout
+
+@using applicationdev.ModelDirectory
+@using applicationdev.ServicesDirectory
+@inject IUserService UserService
+@inject NavigationManager Nav
+@inject IStoreUserService StoreUser
+
+
+<h3>Login</h3>
+
+<EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+    <DataAnnotationsValidator />
+ 
+
+    <div class="mb-3">
+        <label>Email</label>
+        <InputText class="form-control" @bind-Value="loginModel.MailAddress" />
+        <ValidationMessage For="@(() => loginModel.MailAddress)" />
+    </div>
+
+    <div class="mb-3">
+        <label>Password</label>
+        <InputText type="password" class="form-control" @bind-Value="loginModel.SecretHash" />
+        <ValidationMessage For="@(() => loginModel.SecretHash)" />
+    </div>
+
+    <button class="btn btn-primary" type="submit">Login</button>
+</EditForm>
+<p class="mt-2">
+    Don't have an account? 
+    <a href="/register">Register here</a>
+</p>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-danger mt-2">@message</div>
+}
+
+@code {
+    private User loginModel = new User();
+    private string message = string.Empty;
+
+    private async Task HandleLogin()
+    {
+        var user = await UserService.LoginAsync(loginModel.MailAddress, loginModel.SecretHash);
+        if (user == null)
+        {
+            message = "Invalid username/email or password!";
+            return;
+        }
+
+      
+        StoreUser.SetUser(user.UserKey, user.LoginId);
+        Nav.NavigateTo("/home");
+    }
+}

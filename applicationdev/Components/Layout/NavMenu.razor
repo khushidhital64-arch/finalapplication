@@ -1,0 +1,51 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <h4>Journal App</h4>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="home" Match="NavLinkMatch.All">Home
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="addjournal" Match="NavLinkMatch.All">
+                Add journal
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="journals" Match="NavLinkMatch.All">Journals
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="addtag" Match="NavLinkMatch.All">
+               Tags
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="addmood" Match="NavLinkMatch.All">
+             Moods
+            </NavLink>
+        </div>
+        
+       
+
+        
+        
+     
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="setting" Match="NavLinkMatch.All">
+              Setting
+            </NavLink>
+        </div>
+    </nav>
+</div>
