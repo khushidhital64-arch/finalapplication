@@ -4,20 +4,29 @@
 @using applicationdev.ServicesDirectory
 @inject IJournalService JournalService
 @inject IStoreUserService StoreUser
+@inject NavigationManager Nav
+@inject IJSRuntime JS
+@using Microsoft.Maui.Storage;
 
 <h3>My Journals</h3>
 
-<!-- Filters -->
-<div class="row mb-3">
+<!-- Filters Row -->
+<div class="row mb-3 g-2">
     <div class="col-md-3">
-        <input class="form-control" placeholder="Search by content..." @bind="searchContent" @bind:event="oninput" />
+        <input class="form-control"
+               placeholder="Search by content..."
+               @bind="searchContent"
+               @bind:event="oninput" />
     </div>
+
     <div class="col-md-2">
         <input type="date" class="form-control" @bind="fromDate" />
     </div>
+
     <div class="col-md-2">
         <input type="date" class="form-control" @bind="toDate" />
     </div>
+
     <div class="col-md-2">
         <select class="form-select" @bind="selectedMoodId">
             <option value="">-- Filter by Mood --</option>
@@ -27,6 +36,7 @@
             }
         </select>
     </div>
+
     <div class="col-md-2">
         <select class="form-select" @bind="selectedTagId">
             <option value="">-- Filter by Tag --</option>
@@ -36,8 +46,14 @@
             }
         </select>
     </div>
-    <div class="col-md-1">
-        <button class="btn btn-secondary w-100" @onclick="ApplyFilters">Apply</button>
+
+    <div class="col-md-1 d-flex flex-column gap-1">
+        <button class="btn btn-success w-100" @onclick="DownloadPdfForDateRange">
+            Export PDF
+        </button>
+        <button class="btn btn-secondary w-100" @onclick="ApplyFilters">
+            Apply
+        </button>
     </div>
 </div>
 
@@ -57,28 +73,53 @@ else
         {
             <button class="list-group-item list-group-item-action text-start"
                     @onclick="() => ToggleJournal(j.JournalId)">
-                <strong>@j.JournalDate.ToString("yyyy-MM-dd")</strong> |
-                Primary Mood: @j.MainMood?.MoodTitle
+
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>@j.JournalDate.ToString("dd/MM/yyyy")</strong> |
+                         Primary mood: @j.MainMood?.MoodTitle
+                    </div>
+
+                    <div>
+                        <button class="btn btn-sm btn-warning me-2"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => EditJournal(j.JournalId)">
+                            Edit
+                        </button>
+
+                        <button class="btn btn-sm btn-danger me-2"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => DeleteJournal(j.JournalId)">
+                            Delete
+                        </button>
+
+                        <button class="btn btn-sm btn-info"
+                                @onclick:stopPropagation="true"
+                                @onclick="() => DownloadPdf(j)">
+                            PDF
+                        </button>
+                    </div>
+                </div>
+
                 @if (expandedJournalId == j.JournalId)
                 {
                     <div class="mt-2 border-top pt-2">
-                        <p><strong>Word Count:</strong> @j.TotalWordCount</p>
-                        <p><strong>Content:</strong></p>
+                        <p>
+                            <b>Secondary Mood:</b> 
+                            @(j.ExtraMoods.Any() 
+                                ? string.Join(", ", j.ExtraMoods.Select(m => m.RelatedMood.MoodTitle)) 
+                                : "None")
+                        </p>
+                        <p>
+                            <b>Tags:</b> 
+                            @(j.EntryTags.Any() 
+                                ? string.Join(", ", j.EntryTags.Select(t => t.RelatedTag.TagTitle)) 
+                                : "None")
+                        </p>
+                        <p><b>Word Count:</b> @j.TotalWordCount</p>
                         <div>@((MarkupString)j.BodyText)</div>
-
-                        @if (j.ExtraMoods.Any())
-                        {
-                            <p><strong>Secondary Moods:</strong> 
-                                @string.Join(", ", j.ExtraMoods.Select(em => em.RelatedMood.MoodTitle))
-                            </p>
-                        }
-                        @if (j.EntryTags.Any())
-                        {
-                            <p><strong>Tags:</strong> 
-                                @string.Join(", ", j.EntryTags.Select(t => t.RelatedTag.TagTitle))
-                            </p>
-                        }
                     </div>
+
                 }
             </button>
         }
@@ -90,7 +131,6 @@ else
             <li class="page-item @(currentPage == 1 ? "disabled" : "")">
                 <button class="page-link" @onclick="PrevPage">Previous</button>
             </li>
-           
             <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
                 <button class="page-link" @onclick="NextPage">Next</button>
             </li>
@@ -99,70 +139,68 @@ else
 }
 
 @code {
-    private List<JournalEntry> journals;
-    private List<JournalEntry> filteredJournals;
-    private List<JournalEntry> pagedJournals;
+    // --- Data ---
+    private List<JournalEntry> journals = new();
+    private List<JournalEntry> filteredJournals = new();
+    private List<JournalEntry> pagedJournals = new();
 
     private List<Mood> moods = new();
     private List<Tag> tags = new();
 
-    private int? expandedJournalId = null;
+    private int? expandedJournalId;
 
-    // Pagination
+    // --- Pagination ---
     private int currentPage = 1;
-    private int pageSize = 5;
-    private int totalPages => (int)Math.Ceiling((double)(filteredJournals?.Count ?? 0) / pageSize);
+    private int pageSize = 4;
+    private int totalPages => (int)Math.Ceiling((double)filteredJournals.Count / pageSize);
 
-    // Filters
-    private string searchContent = string.Empty;
-    private int? selectedMoodId = null;
-    private int? selectedTagId = null;
-    private DateTime? fromDate = null;
-    private DateTime? toDate = null;
+    // --- Filters ---
+    private string searchContent = "";
+    private int? selectedMoodId;
+    private int? selectedTagId;
+    private DateTime? fromDate;
+    private DateTime? toDate;
 
     protected override async Task OnInitializedAsync()
     {
         var userId = StoreUser.UserId;
 
-        // Load journals for current user
         journals = (await JournalService.GetAllJournalsAsync())
-                   .Where(j => j.OwnerId == userId)
-                   .OrderByDescending(j => j.JournalDate)
-                   .ToList();
+            .Where(j => j.OwnerId == userId)
+            .OrderByDescending(j => j.JournalDate)
+            .ToList();
 
-        // Load moods and tags for filters
-        moods = journals.Select(j => j.MainMood)
-                       .Where(m => m != null)
-                       .Distinct()
-                       .ToList();
+        moods = journals.Select(j => j.MainMood).Where(m => m != null).Distinct().ToList();
+        tags = journals.SelectMany(j => j.EntryTags.Select(t => t.RelatedTag)).Distinct().ToList();
 
-        tags = journals.SelectMany(j => j.EntryTags.Select(t => t.RelatedTag))
-                       .Where(t => t != null)
-                       .Distinct()
-                       .ToList();
-
-        // Initially show all journals
         filteredJournals = new List<JournalEntry>(journals);
         ApplyPagination();
     }
 
-    private void ToggleJournal(int journalId)
+    // --- Toggle Expand ---
+    private void ToggleJournal(int id) =>
+        expandedJournalId = expandedJournalId == id ? null : id;
+
+    private void EditJournal(int id) =>
+        Nav.NavigateTo($"/addjournal/{id}");
+
+    private async Task DeleteJournal(int id)
     {
-        expandedJournalId = expandedJournalId == journalId ? null : journalId;
+        await JournalService.DeleteJournalAsync(id);
+        journals.RemoveAll(j => j.JournalId == id);
+        ApplyFilters();
     }
 
+    // --- Filters & Pagination ---
     private void ApplyFilters()
     {
-        // Start with all journals
         filteredJournals = journals;
 
-        // 1️⃣ Filter by content
         if (!string.IsNullOrWhiteSpace(searchContent))
             filteredJournals = filteredJournals
-                .Where(j => j.BodyText.Contains(searchContent))
+                .Where(j => j.BodyText.Contains(searchContent, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-        // 2️⃣ Filter by date range
         if (fromDate.HasValue)
             filteredJournals = filteredJournals
                 .Where(j => j.JournalDate.Date >= fromDate.Value.Date)
@@ -173,24 +211,16 @@ else
                 .Where(j => j.JournalDate.Date <= toDate.Value.Date)
                 .ToList();
 
-        // 3️⃣ Filter by primary mood
         if (selectedMoodId.HasValue)
             filteredJournals = filteredJournals
                 .Where(j => j.MainMoodId == selectedMoodId)
                 .ToList();
 
-        // 4️⃣ Filter by tag
         if (selectedTagId.HasValue)
             filteredJournals = filteredJournals
                 .Where(j => j.EntryTags.Any(t => t.RelatedTagId == selectedTagId))
                 .ToList();
 
-        // Sort by date descending
-        filteredJournals = filteredJournals
-            .OrderByDescending(j => j.JournalDate)
-            .ToList();
-
-        // Reset page
         currentPage = 1;
         ApplyPagination();
     }
@@ -220,4 +250,125 @@ else
             ApplyPagination();
         }
     }
+
+    // ================= PDF SECTION =================
+
+    // Single Journal PDF
+    private async Task DownloadPdf(JournalEntry journal)
+    {
+        try
+        {
+            var html = GenerateJournalHtml(journal);
+            await GenerateAndOpenPdf(html, $"Journal_{journal.JournalDate:yyyyMMdd}.pdf");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("PDF Error: " + ex.Message);
+        }
+    }
+
+    // Date Range PDF
+    private async Task DownloadPdfForDateRange()
+    {
+        if (fromDate == null || toDate == null)
+        {
+            Console.WriteLine("Please select a valid date range.");
+            return;
+        }
+
+        var journalsInRange = filteredJournals
+            .Where(j => j.JournalDate.Date >= fromDate.Value.Date &&
+                        j.JournalDate.Date <= toDate.Value.Date)
+            .OrderBy(j => j.JournalDate)
+            .ToList();
+
+        if (!journalsInRange.Any())
+        {
+            Console.WriteLine("No journals found in this date range.");
+            return;
+        }
+
+        var html = @"<div style='margin:20px; font-family:Arial, sans-serif;'>";
+
+        foreach (var journal in journalsInRange)
+        {
+            html += GenerateJournalHtml(journal);
+        }
+
+        html += "</div>";
+
+        await GenerateAndOpenPdf(html, $"Journals_{fromDate:yyyyMMdd}_{toDate:yyyyMMdd}.pdf");
+    }
+
+    private string GenerateJournalHtml(JournalEntry journal)
+    {
+        var secondaryMoods = journal.ExtraMoods.Any()
+            ? string.Join(", ", journal.ExtraMoods.Select(m => m.RelatedMood.MoodTitle))
+            : "None";
+
+        var tagList = journal.EntryTags.Any()
+            ? string.Join(", ", journal.EntryTags.Select(t => t.RelatedTag.TagTitle))
+            : "None";
+
+        return $@"
+<div style='margin:25px 0; padding:20px; border:2px solid #4f46e5; background:#f5f7ff; border-radius:10px; font-family:Arial, sans-serif;'>
+
+    <!-- Header -->
+    <div style='background:#4f46e5; color:white; padding:10px 15px; border-radius:6px;'>
+        <h3 style='margin:0;'>Journal Entry</h3>
+        <small>Date: {journal.JournalDate:yyyy-MM-dd}</small>
+    </div>
+
+    <!-- Info Section -->
+    <div style='margin-top:15px; display:grid; grid-template-columns:1fr 1fr; gap:10px; font-size:14px;'>
+        <p><b style='color:#4f46e5;'>Primary Mood:</b> {journal.MainMood?.MoodTitle}</p>
+        <p><b style='color:#4f46e5;'>Secondary Moods:</b> {secondaryMoods}</p>
+        <p><b style='color:#4f46e5;'>Tags:</b> {tagList}</p>
+        <p><b style='color:#4f46e5;'>Word Count:</b> {journal.TotalWordCount}</p>
+    </div>
+
+    <hr style='margin:15px 0; border:1px solid #ddd;' />
+
+    <!-- Body -->
+    <div style='background:white; padding:15px; border-radius:6px; line-height:1.6; font-size:15px; color:#333;'>
+        {journal.BodyText}
+    </div>
+
+</div>";
+    }
+
+    private async Task GenerateAndOpenPdf(string html, string fileName)
+    {
+        try
+        {
+            var base64 = await JS.InvokeAsync<string>("pdfExporter.createPdfBase64", html);
+
+            if (!string.IsNullOrEmpty(base64))
+            {
+                byte[] pdfBytes = Convert.FromBase64String(base64);
+
+                var filePath = Path.Combine(FileSystem.CacheDirectory, fileName);
+
+                await File.WriteAllBytesAsync(filePath, pdfBytes);
+
+         
+                await Launcher.Default.OpenAsync(new OpenFileRequest
+                {
+                    File = new ReadOnlyFile(filePath)
+                });
+
+                Console.WriteLine($"PDF saved to: {filePath}");
+            }
+            else
+            {
+                Console.WriteLine("PDF generation failed or returned empty.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("PDF open error: " + ex.Message);
+        }
+    }
+
+
 }
