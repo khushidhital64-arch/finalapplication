@@ -1,4 +1,6 @@
 @page "/addjournal"
+@page "/addjournal/{JournalId:int}"
+
 @inject IStoreUserService StoreUser
 @using applicationdev.ModelDirectory
 @using applicationdev.ServicesDirectory
@@ -8,7 +10,7 @@
 @inject NavigationManager Nav
 @inject IJSRuntime JS
 
-<h3>Add Journal Entry</h3>
+<h3>@(JournalId.HasValue ? "Edit Journal Entry" : "Add Journal Entry")</h3>
 <hr />
 
 <EditForm Model="journalModel" OnValidSubmit="HandleSave">
@@ -18,19 +20,19 @@
     <!-- Date -->
     <div class="mb-3">
         <label>Date</label>
-        <InputDate class="form-control" @bind-Value="journalModel.JournalDate" />
+        <InputDate class="form-control"
+                   @bind-Value="journalModel.JournalDate"
+                   disabled="@JournalId.HasValue" />
         <ValidationMessage For="@(() => journalModel.JournalDate)" />
     </div>
 
-    
     <!-- Content -->
     <div class="mb-3">
         <label>Content</label>
-    
         <div id="editor" style="height: 200px; border: 1px solid #ccc;"></div>
     </div>
 
-    <!-- Primary Mood (required) -->
+    <!-- Primary Mood -->
     <div class="mb-3">
         <label>Main Mood</label>
         <InputSelect class="form-control" @bind-Value="journalModel.MainMoodId">
@@ -43,7 +45,7 @@
         <ValidationMessage For="@(() => journalModel.MainMoodId)" />
     </div>
 
-    <!-- Secondary Moods (optional) -->
+    <!-- Secondary Moods -->
     <div class="mb-3">
         <label>Secondary Moods (optional)</label>
         <select multiple class="form-select" @onchange="SecondaryMoodsChanged">
@@ -56,7 +58,7 @@
         </select>
     </div>
 
-    <!-- Tags (optional) -->
+    <!-- Tags -->
     <div class="mb-3">
         <label>Tags (optional)</label>
         <select multiple class="form-select" @onchange="TagsChanged">
@@ -69,7 +71,9 @@
         </select>
     </div>
 
-    <button class="btn btn-primary" type="submit">Save Journal</button>
+    <button class="btn btn-primary" type="submit">
+        @(JournalId.HasValue ? "Update Journal" : "Save Journal")
+    </button>
 </EditForm>
 
 @if (!string.IsNullOrEmpty(message))
@@ -77,10 +81,10 @@
     <div class="alert alert-danger mt-2">@message</div>
 }
 
-
-
-
 @code {
+    [Parameter]
+    public int? JournalId { get; set; }
+
     private JournalEntry journalModel = new JournalEntry
     {
         JournalDate = DateTime.Today
@@ -98,14 +102,36 @@
     {
         moods = await MoodService.GetAllMoodsAsync();
         tags = await TagService.GetAllTagsAsync();
+
+        // If editing, load existing journal
+        if (JournalId.HasValue)
+        {
+            var journal = await JournalService.GetJournalByIdAsync(JournalId.Value);
+
+            journalModel = journal;
+
+            selectedSecondaryMoodIds = journal.ExtraMoods
+                .Select(m => m.RelatedMoodId)
+                .ToList();
+
+            selectedTagIds = journal.EntryTags
+                .Select(t => t.RelatedTagId)
+                .ToList();
+        }
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
         {
-            // Initialize Quill editor
+            // Initialize Quill
             await JS.InvokeVoidAsync("initQuill", "editor");
+
+            // If editing, load existing content into editor
+            if (JournalId.HasValue)
+            {
+                await JS.InvokeVoidAsync("setQuillHtml", journalModel.BodyText);
+            }
         }
     }
 
@@ -127,36 +153,42 @@
     {
         message = string.Empty;
 
-        
         if (journalModel.MainMoodId == 0)
         {
             message = "Please select a primary mood!";
             return;
         }
+
         journalModel.BodyText = await JS.InvokeAsync<string>("getQuillHtml");
-        
+
         if (string.IsNullOrWhiteSpace(journalModel.BodyText))
         {
             message = "Please write something in your journal!";
             return;
         }
 
-        var userId = StoreUser.UserId; // get logged-in user id
-        var existing = (await JournalService.GetAllJournalsAsync())
-            .FirstOrDefault(j => 
-                j.JournalDate.Date == journalModel.JournalDate.Date &&
-                j.OwnerId == userId);
-        if (existing != null)
+        var userId = StoreUser.UserId;
+
+        // Duplicate date check ONLY when adding new
+        if (!JournalId.HasValue)
         {
-            message = "A journal entry for this date already exists! You can only add one mood per day.";
-            return;
+            var existing = (await JournalService.GetAllJournalsAsync())
+                .FirstOrDefault(j =>
+                    j.JournalDate.Date == journalModel.JournalDate.Date &&
+                    j.OwnerId == userId);
+
+            if (existing != null)
+            {
+                message = "A journal entry for this date already exists!";
+                return;
+            }
         }
-   
-     
-        journalModel.OwnerId = StoreUser.UserId;
+
+        journalModel.OwnerId = userId;
 
         // Word count
-        journalModel.TotalWordCount = journalModel.BodyText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
+        journalModel.TotalWordCount =
+            journalModel.BodyText.Split(' ', StringSplitOptions.RemoveEmptyEntries).Length;
 
         // Secondary moods
         journalModel.ExtraMoods.Clear();
@@ -180,9 +212,15 @@
             });
         }
 
-        await JournalService.AddJournalAsync(journalModel);
+        if (JournalId.HasValue)
+        {
+            await JournalService.UpdateJournalAsync(journalModel);
+        }
+        else
+        {
+            await JournalService.AddJournalAsync(journalModel);
+        }
 
-        message = "Journal entry saved successfully!";
         Nav.NavigateTo("/journals");
     }
 }
